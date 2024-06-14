@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import hashlib
 
 current_dir = dirname(abspath(__file__))
 static_path = join(current_dir, "static")
@@ -16,7 +17,6 @@ app.mount("/ui", StaticFiles(directory=static_path), name="ui")
 
 class Body(BaseModel):
     length: Union[int, None] = 20
-
 
 @app.get('/')
 def root():
@@ -35,3 +35,14 @@ def generate(body: Body):
     """
     string = base64.b64encode(os.urandom(64))[:body.length].decode('utf-8')
     return {'token': string}
+
+#generate a Pydantic Model
+class Token(BaseModel):
+    token: str
+
+# Create a FastAPI endpoint that accepts a POST request with a JSON body containing a single field called "text" and returns a checksum of the text in the response body.
+@app.post('/checksum', response_model=Token)
+def calculate_checksum(body: TextBody):
+    # Calculate a checksum of the text
+    checksum = hashlib.sha256(body.text.encode('utf-8')).hexdigest()
+    return {'token': checksum}
